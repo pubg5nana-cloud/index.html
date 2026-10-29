@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#111827">
+<title>AI Video Maker 1.0</title>
+<style>
+:root{color-scheme:dark;--bg:#0b1020;--panel:#151d31;--line:#2b3650;--text:#f3f6ff;--muted:#aab6d0;--accent:#8b9cff;--good:#70e1b2}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(160deg,#111a32,#090d18 65%);font:16px system-ui,-apple-system,Segoe UI,sans-serif;color:var(--text)}
+main{max-width:760px;margin:auto;padding:18px 14px 40px}.brand{display:flex;align-items:center;gap:12px;margin:8px 0 20px}.logo{width:48px;height:48px;border-radius:15px;display:grid;place-items:center;background:linear-gradient(135deg,#8193ff,#b47cff);font-size:25px}.brand h1{font-size:22px;margin:0}.brand p{margin:3px 0 0;color:var(--muted);font-size:13px}
+.card{background:rgba(21,29,49,.94);border:1px solid var(--line);border-radius:18px;padding:16px;margin:12px 0;box-shadow:0 8px 30px #0002}h2{font-size:17px;margin:0 0 12px}label{display:block;font-size:13px;color:var(--muted);margin:12px 0 6px}textarea,select,input{width:100%;border:1px solid var(--line);background:#0d1425;color:var(--text);padding:12px;border-radius:11px;font:inherit}textarea{min-height:96px;resize:vertical}button,.filebutton{border:0;border-radius:12px;padding:12px 14px;background:var(--accent);color:#0b1020;font-weight:750;font-size:14px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:7px}button.secondary{background:#293550;color:var(--text);border:1px solid #3a4868}button:disabled{opacity:.45;cursor:not-allowed}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.note{font-size:12px;color:var(--muted);line-height:1.5}.scene{border:1px solid var(--line);border-radius:13px;padding:12px;margin:9px 0;background:#0e1527}.scenehead{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:7px}.scenehead strong{font-size:13px}.scene p{font-size:13px;line-height:1.5;color:#dce4f8;margin:0 0 10px;white-space:pre-wrap}.small{font-size:12px;color:var(--muted)}.status{padding:10px 12px;border-radius:10px;background:#0e1527;border:1px solid var(--line);font-size:13px;line-height:1.5;margin-top:10px}.preview{width:min(100%,300px);aspect-ratio:9/16;display:block;margin:12px auto;background:#05070c;border:1px solid var(--line);border-radius:12px}.cliprow{display:flex;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}.cliprow:last-child{border-bottom:0}.cliprow .clipname{min-width:0;flex:1;overflow-wrap:anywhere;font-size:13px}.pill{display:inline-block;border:1px solid #425274;color:#c9d4f2;border-radius:999px;padding:4px 8px;font-size:11px;margin:0 5px 5px 0}.good{color:var(--good)}footer{text-align:center;color:var(--muted);font-size:12px;padding:15px}
+</style>
+</head>
+<body>
+<main>
+  <header class="brand"><div class="logo">🎬</div><div><h1>AI Video Maker 1.0</h1><p>Prompt → scenes → clips → vertical video</p></div></header>
+  <div class="card">
+    <h2>1 · Describe your video</h2>
+    <label for="prompt">Your idea</label>
+    <textarea id="prompt" placeholder="Example: Jesus gently helps a hungry elderly man on an ancient Jerusalem street. Warm cinematic light, compassionate expressions.">Jesus gently helps a hungry elderly man on an ancient Jerusalem street. Warm cinematic light, compassionate expressions.</textarea>
+    <label for="style">Visual style</label>
+    <select id="style"><option value="Photorealistic cinematic biblical film, historically inspired first-century setting">Realistic cinematic</option><option value="Soft painterly animation, peaceful and emotional">Animated / illustrated</option><option value="Documentary-style natural light, realistic camera movement">Natural documentary</option></select>
+    <label for="count">Number of scenes</label>
+    <select id="count"><option value="3">3 scenes · short</option><option value="5" selected>5 scenes · about 25 seconds</option><option value="7">7 scenes · about 35 seconds</option></select>
+    <div class="actions"><button id="makeScenes">✨ Create scene prompts</button></div>
+    <p class="note">This first version creates scene prompts locally. It does not pretend to generate AI footage by itself.</p>
+  </div>
+  <div class="card">
+    <h2>2 · Scene prompts</h2>
+    <div id="scenes"><p class="note">Your scene prompts will appear here. Copy each prompt into an AI video service you can access for free, then save the generated clips to your phone.</p></div>
+  </div>
+  <div class="card">
+    <h2>3 · Add your generated clips</h2>
+    <label for="clips">Choose video clips from your phone (MP4/WebM recommended)</label>
+    <input id="clips" type="file" accept="video/*" multiple>
+    <p class="note">Choose clips in the order you want them to appear. For best results, use vertical 9:16 clips around 5 seconds each. Files stay in this browser session; they are not uploaded to our server.</p>
+    <div id="clipList"><p class="note">No clips selected yet.</p></div>
+  </div>
+  <div class="card">
+    <h2>4 · Preview & export a silent vertical montage</h2>
+    <canvas id="canvas" class="preview" width="720" height="1280"></canvas>
+    <div class="actions">
+      <button id="previewBtn" class="secondary" disabled>▶ Preview montage</button>
+      <button id="exportBtn" disabled>⬇ Create video file</button>
+    </div>
+    <div id="status" class="status">Ready. Add clips to enable preview and export.</div>
+    <a id="download" hidden style="display:block;margin-top:12px;color:#bfcaff;overflow-wrap:anywhere">Download your video</a>
+    <p class="note">Export uses your phone's browser to record the canvas as a WebM video. It is silent in version 1.0 and requires the page to stay open while recording. Android/Chrome codec support can vary.</p>
+  </div>
+  <div class="card">
+    <h2>What is free—and what isn't?</h2>
+    <p class="note"><span class="pill">Free</span> This app file, prompt generation, clip selection and local montage recording.</p>
+    <p class="note"><span class="pill">May have limits</span> Third-party AI video generators can require accounts, credits, waiting, or payment. We do not use a paid API or ask you for a secret API key.</p>
+    <p class="note">Next version can add voiceover, captions, transitions and a proper audio/video export pipeline. Do not upload private footage to services you do not trust.</p>
+  </div>
+  <footer>AI Video Maker 1.0 · Built for mobile browsers</footer>
+</main>
+<script>
+const $ = id => document.getElementById(id);
+const sceneBox = $('scenes'), clipInput = $('clips'), clipList = $('clipList');
+const canvas = $('canvas'), ctx = canvas.getContext('2d');
+let files = [], urls = [], videos = [], recording = false, previewing = false;
+
+function makeSceneTexts(){
+  const idea = $('prompt').value.trim();
+  if(!idea){ alert('Enter a video idea first.'); return; }
+  const style = $('style').value;
+  const n = Number($('count').value);
+  const beats = [
+    'Establishing shot: introduce the location, atmosphere, and main character. Slow cinematic camera movement.',
+    'Show the central problem clearly through natural body language and facial expressions.',
+    'The main character notices the person in need and approaches with kindness.',
+    'Show the compassionate action in a close, emotional shot with realistic details.',
+    'End with a hopeful, peaceful moment; gentle camera pull-back and a composition suitable for a seamless short-video ending.',
+    'Show a meaningful reaction from nearby people, with subtle natural movement and consistent character appearance.',
+    'Finish on a warm, uplifting wide shot with soft light and a calm ending.'
+  ];
+  sceneBox.innerHTML = '';
+  for(let i=0;i<n;i++){
+    const text = `${style}. Vertical 9:16 video, 5 seconds. Scene ${i+1}: ${beats[i]}\nStory concept: ${idea}\nKeep the same character faces, clothing, time period, and color grade across all scenes. Realistic motion, natural hands and faces, no text, no watermark.`;
+    const el = document.createElement('div'); el.className='scene';
+    const head=document.createElement('div'); head.className='scenehead';
+    const title=document.createElement('strong'); title.textContent=`SCENE ${i+1} · ~5 sec`;
+    const copy=document.createElement('button'); copy.className='secondary'; copy.textContent='Copy prompt';
+    copy.onclick=async()=>{try{await navigator.clipboard.writeText(text);copy.textContent='Copied ✓';}catch(e){showStatus('Copy was blocked by the browser. Long-press the prompt text and copy it manually.');}};
+    const p=document.createElement('p'); p.textContent=text;
+    head.append(title,copy); el.append(head,p); sceneBox.append(el);
+  }
+}
+$('makeScenes').addEventListener('click',makeSceneTexts);
+
+function showStatus(s){$('status').textContent=s;}
+function cleanupVideos(){ videos.forEach(v=>{try{v.pause();v.removeAttribute('src');v.load();}catch(e){}}); urls.forEach(u=>URL.revokeObjectURL(u)); videos=[];urls=[]; }
+clipInput.addEventListener('change',()=>{
+  cleanupVideos(); files=Array.from(clipInput.files||[]);
+  clipList.innerHTML='';
+  if(!files.length){clipList.innerHTML='<p class="note">No clips selected yet.</p>'; updateButtons();return;}
+  files.forEach((f,i)=>{
+    const row=document.createElement('div');row.className='cliprow';
+    const name=document.createElement('div');name.className='clipname';name.textContent=`${i+1}. ${f.name} · ${(f.size/1024/1024).toFixed(1)} MB`;
+    row.append(name);clipList.append(row);
+    const v=document.createElement('video');v.src=URL.createObjectURL(f);urls.push(v.src);v.muted=true;v.playsInline=true;v.preload='auto';videos.push(v);
+  });
+  Promise.all(videos.map(v=>new Promise(resolve=>{v.onloadedmetadata=resolve;v.onerror=resolve;setTimeout(resolve,5000);}))).then(()=>{
+    showStatus(`${files.length} clip(s) selected. Tap Preview montage first. Large files may take longer.`);
+    updateButtons();
+  });
+});
+function updateButtons(){const ok=videos.length>0&&!recording;$('previewBtn').disabled=!ok;$('exportBtn').disabled=!ok;}
+function drawCover(v){
+  const w=canvas.width,h=canvas.height;
+  ctx.fillStyle='#05070c';ctx.fillRect(0,0,w,h);
+  if(v && v.readyState>=2 && v.videoWidth>0){
+    const scale=Math.max(w/v.videoWidth,h/v.videoHeight);
+    const sw=w/scale, sh=h/scale;
+    const sx=(v.videoWidth-sw)/2, sy=(v.videoHeight-sh)/2;
+    ctx.drawImage(v,sx,sy,sw,sh,0,0,w,h);
+  } else {
+    ctx.fillStyle='#dce4ff';ctx.textAlign='center';ctx.font='bold 32px system-ui';ctx.fillText('AI VIDEO MAKER',w/2,h/2-15);
+    ctx.font='24px system-ui';ctx.fillText('Add clips to begin',w/2,h/2+30);
+  }
+}
+async function runMontage(record){
+  if(!videos.length)return;
+  previewing=true;recording=record;updateButtons();
+  $('download').hidden=true;
+  let recorder=null, chunks=[];
+  try{
+    if(record){
+      if(!canvas.captureStream || !window.MediaRecorder) throw new Error('This browser does not support canvas video recording. Try updating Chrome.');
+      const stream=canvas.captureStream(25);
+      let mime='';
+      for(const m of ['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm']){
+        if(MediaRecorder.isTypeSupported(m)){mime=m;break;}
+      }
+      recorder = mime ? new MediaRecorder(stream,{mimeType:mime}) : new MediaRecorder(stream);
+      recorder.ondataavailable=e=>{if(e.data&&e.data.size)chunks.push(e.data);};
+      const stopped=new Promise(resolve=>recorder.onstop=resolve);
+      recorder.start(500);
+      showStatus('Recording montage… keep this page open and do not lock your phone.');
+      for(let i=0;i<videos.length;i++){
+        const v=videos[i];v.pause();try{v.currentTime=0;}catch(e){}
+        await new Promise(resolve=>{
+          let done=false;const finish=()=>{if(done)return;done=true;v.pause();resolve();};
+          v.onended=finish;
+          v.onerror=finish;
+          const timer=setTimeout(finish, Math.max(1,Math.min(8,(v.duration||5)))*1000);
+          const oldFinish=finish;
+          v.onended=()=>{clearTimeout(timer);oldFinish();};
+          v.play().then(()=>{
+            const tick=()=>{if(done)return;drawCover(v);if(v.ended || (Number.isFinite(v.duration)&&v.currentTime>=v.duration-0.08)){clearTimeout(timer);finish();}else requestAnimationFrame(tick);};
+            requestAnimationFrame(tick);
+          }).catch(()=>{clearTimeout(timer);finish();});
+        });
+        drawCover(v);
+      }
+      await new Promise(r=>setTimeout(r,250));
+      recorder.stop();await stopped;stream.getTracks().forEach(t=>t.stop());
+      const blob=new Blob(chunks,{type:recorder.mimeType||'video/webm'});
+      if(!blob.size)throw new Error('The browser produced an empty file. Try shorter clips or preview again.');
+      const out=URL.createObjectURL(blob);const a=$('download');a.href=out;a.download='ai-video-maker-1-0.webm';a.textContent=`Download montage (${(blob.size/1024/1024).toFixed(1)} MB)`;a.hidden=false;
+      showStatus('Export finished. Download the WebM file. This version exports video only—no audio track.');
+    }else{
+      showStatus('Preview playing…');
+      for(const v of videos){
+        v.pause();try{v.currentTime=0;}catch(e){}
+        await new Promise(resolve=>{
+          let done=false;const finish=()=>{if(done)return;done=true;v.pause();resolve();};
+          v.onended=finish;v.onerror=finish;
+          const timer=setTimeout(finish,Math.max(1,Math.min(8,v.duration||5))*1000);
+          v.play().then(()=>{const tick=()=>{if(done)return;drawCover(v);if(v.ended){clearTimeout(timer);finish();}else requestAnimationFrame(tick);};requestAnimationFrame(tick);}).catch(()=>{clearTimeout(timer);finish();});
+        });
+      }
+      showStatus('Preview finished. If it looks right, tap Create video file.');
+    }
+  }catch(e){showStatus('Could not finish: '+e.message);}
+  finally{previewing=false;recording=false;updateButtons();drawCover(null);}
+}
+$('previewBtn').addEventListener('click',()=>{if(!previewing)runMontage(false);});
+$('exportBtn').addEventListener('click',()=>{if(!previewing)runMontage(true);});
+drawCover(null);
+</script>
+</body>
+</html>
